@@ -137,8 +137,10 @@ test('Connection', (t) => {
 
   // send
 
+  const connWrite = conn.write
+
   conn.write = function(c) {
-    conn.write = writeOrig
+    conn.write = connWrite
     t.pass('called write')
     t.equal(c, 'PRIVMSG #biscuits :This is a test')
   }
@@ -178,7 +180,7 @@ test('Connection', (t) => {
 
   // PING/PONG
   conn.write = function(chunk) {
-    conn.write = writeOrig
+    conn.write = connWrite
     t.equal(chunk, 'PONG :message', 'write chunk')
   }
 
@@ -209,7 +211,17 @@ test('Connection', (t) => {
     , channels: ['#biscuits']
     , oper: true
     , server: 'services.'
+    , away: 'biscuits'
+    , idle: '1'
+    , sign: '2'
     }, 'whois')
+  })
+
+  conn.socket.emit('RPL_WHOISUSER', {
+    prefix: 'rajaniemi.freenode.net'
+  , command: 'RPL_WHOISUSER'
+  , params: ['evan', 'NickServ', 'NickServ', 'services.', '*']
+  , trailing: 'Nickname Services'
   })
 
   conn.socket.emit('RPL_WHOISUSER', {
@@ -237,6 +249,20 @@ test('Connection', (t) => {
     prefix: 'rajaniemi.freenode.net'
   , command: 'RPL_WHOISOPERATOR'
   , params: ['evan', 'NickServ']
+  })
+
+  conn.socket.emit('RPL_AWAY', {
+    prefix: 'rajaniemi.freenode.net'
+  , command: 'RPL_AWAY'
+  , params: ['evan', 'NickServ']
+  , trailing: 'biscuits'
+  })
+
+  conn.socket.emit('RPL_WHOISIDLE', {
+    prefix: 'rajaniemi.freenode.net'
+  , command: 'RPL_WHOISIDLE'
+  , params: ['evan', 'NickServ', '1', '2']
+  , trailing: ''
   })
 
   conn.socket.emit('RPL_ENDOFWHOIS', {
@@ -329,7 +355,7 @@ test('Connection', (t) => {
   })
 
   conn.write = function(chunk) {
-    conn.write = writeOrig
+    conn.write = connWrite
     t.equal(chunk, 'MODE #biscuits', 'write chunk')
     logCount++
   }
@@ -341,10 +367,37 @@ test('Connection', (t) => {
   , trailing: 'BISCUITS'
   })
 
+  conn.socket.emit('TOPIC', {
+    prefix: 'evan!~evan@unaffiliated/evan'
+  , command: 'TOPIC'
+  , params: ['#biscuits-']
+  , trailing: 'BISCUITS'
+  })
+
   t.equal(chan.topic, 'BISCUITS', 'topic')
   t.equal(chan.messages.length, ++msgCount, 'messages.length')
 
   t.equal(conn.logs.length, logCount++, 'logs.length')
+
+  conn.once('log', (msg) => {
+    t.equal(msg.type, 'topic', 'got topic log event')
+    t.equal(chan.topic, 'THE TOPIC', 'topic')
+    t.equal(chan.messages.length, ++msgCount, 'messages.length')
+    t.equal(conn.logs.length, logCount++, 'logs.length')
+  })
+
+  conn.write = function(chunk) {
+    conn.write = connWrite
+    t.equal(chunk, 'MODE #biscuits', 'write chunk')
+    logCount++
+  }
+
+  conn.socket.emit('RPL_TOPIC', {
+    prefix: 'evan!~evan@unaffiliated/evan'
+  , command: 'RPL_TOPIC'
+  , params: ['evan', '#biscuits']
+  , trailing: 'THE TOPIC'
+  })
 
   t.equal(chan.joined, false, 'chan.joined')
 
@@ -361,7 +414,7 @@ test('Connection', (t) => {
   })
 
   conn.write = function(chunk) {
-    conn.write = writeOrig
+    conn.write = connWrite
     t.equal(chunk, 'WHO #biscuits', 'write chunk')
   }
 
@@ -382,7 +435,7 @@ test('Connection', (t) => {
   t.equal(chan.users.size, 2, 'chan.users.size')
 
   conn.write = function(chunk) {
-    conn.write = writeOrig
+    conn.write = connWrite
     t.equal(chunk, 'NAMES #biscuits evan')
   }
 
@@ -432,11 +485,6 @@ test('Connection', (t) => {
     t.equal(c, a, 'got channelUpdated event')
   })
 
-  conn.write = function(chunk) {
-    conn.write = writeOrig
-    t.equal(chunk, 'WHOIS anotherUser')
-  }
-
   conn.socket.emit('PRIVMSG', {
     prefix: 'anotherUser!~anotherUser@unaffiliated/anotherUser'
   , command: 'PRIVMSG'
@@ -483,13 +531,86 @@ test('Connection', (t) => {
 
   t.equal(conn.nick, 'eva_', 'nick is updated')
 
+  conn.once('channelUpdated', (c) => {
+    t.equal(c, chan, 'got channelUpdated event')
+    // check the user
+    const u = chan.users.get('eva_')
+    t.equal(u.nickname, 'eva_', 'nick')
+    t.equal(u.mode, '@', 'mode')
+    t.equal(u.username, '~evan')
+  })
+
+  conn.socket.emit('RPL_WHOREPLY', {
+    prefix: 'wofle.freenode.net'
+  , command: 'RPL_WHOREPLY'
+  , params: [
+      'eva_'
+    , '#biscuits'
+    , '~evan'
+    , 'unaffiliated/evan'
+    , 'holmes.freenode.net'
+    , 'eva_'
+    , 'H@'
+    ]
+  , trailing: '0 evan'
+  })
+
+  conn.socket.emit('RPL_WHOREPLY', {
+    prefix: 'wofle.freenode.net'
+  , command: 'RPL_WHOREPLY'
+  , params: [
+      'eva_'
+    , '#biscuits-'
+    , '~evan'
+    , 'unaffiliated/evan'
+    , 'holmes.freenode.net'
+    , 'eva_'
+    , 'H@'
+    ]
+  , trailing: '0 evan'
+  })
+
+
+  // Channel stuff
+
+  const origSend = conn.send
+  conn.send = function(target, m) {
+    conn.send = origSend
+    t.equal(target, chan.name)
+    t.equal(m, 'This is a test')
+  }
+
+  chan.send('This is a test')
+
+  conn.send = function(target, m) {
+    conn.send = origSend
+    t.equal(target, chan.name)
+    t.equal(m, '\u0001ACTION This is a test\u0001')
+  }
+
+  chan.action('This is a test')
+
+  chan.addUser({
+    nickname: 'biscuiteater'
+  , mode: '+'
+  })
+
+  t.equal(chan.users.size, 3, 'users.size')
+
   // These should be last
   conn.once('channelRemoved', (m) => {
     t.pass('got channelRemoved event')
     t.equal(m, chan, 'the channel is correct')
   })
 
-  conn.removeChannel('#biscuits')
+  conn.write = function(chunk) {
+    conn.write = connWrite
+    const m = 'eyearesee https://github.com/evanlucas/eyearesee'
+    t.equal(chunk, `PART #biscuits :${m}`)
+  }
+
+  chan.partAndDestroy()
+
   conn.removeChannel('#biscuits')
 
   conn.once('queryRemoved', (m) => {
@@ -500,5 +621,18 @@ test('Connection', (t) => {
   conn.removeQuery('anotherUser2')
   conn.removeQuery('anotherUser')
 
-  t.end()
+  t.throws(() => {
+    conn.log({})
+  }, /message type is required/)
+
+  conn.removeAllListeners('connect')
+
+  const orig = conn.socket.write
+  conn.socket.write = function(c) {
+    conn.socket.write = orig
+    t.equal(c, 'STRING', 'conn.write calls conn.socket.write')
+    t.end()
+  }
+
+  conn.write('STRING')
 })

@@ -4,6 +4,7 @@
   "description": "irc client for use in eyearesee",
   "main": "index.js",
   "scripts": {
+    "pretest": "lintit",
     "test": "tap test/*.js --cov"
   },
   "dependencies": {
@@ -12,6 +13,7 @@
     "keytar": "~3.0.0"
   },
   "devDependencies": {
+    "lintit": "~1.0.1",
     "tap": "~5.0.0"
   },
   "license": "MIT",

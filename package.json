@@ -22,6 +22,14 @@
     "type": "git",
     "url": "https://github.com/evanlucas/eyearesee-client"
   },
+  "keywords": [
+    "irc",
+    "irc-client",
+    "connection",
+    "channel",
+    "client",
+    "internet relay chat"
+  ],
   "homepage": "https://github.com/evanlucas/eyearesee-client",
   "bugs": {
     "url": "https://github.com/evanlucas/eyearesee-client/issues"

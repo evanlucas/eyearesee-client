@@ -8,7 +8,6 @@ const lastVal = '11aaaaaaaaaaa12aaaaaaaaaaaa13aaaaaaaaaaaaa14aaaaaaaaaaaaaa'
 
 test('Split', (t) => {
   let count = 0
-  let buf
   function read() {
     count++
 

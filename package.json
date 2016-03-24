@@ -1,0 +1,27 @@
+{
+  "name": "eyearesee-client",
+  "version": "1.0.0",
+  "description": "irc client for use in eyearesee",
+  "main": "index.js",
+  "scripts": {
+    "test": "tap test/*.js --cov"
+  },
+  "dependencies": {
+    "debug": "~2.2.0",
+    "irc-replies": "~2.0.1",
+    "keytar": "~3.0.0"
+  },
+  "devDependencies": {
+    "tap": "~5.0.0"
+  },
+  "license": "MIT",
+  "author": "Evan Lucas <evanlucas@me.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evanlucas/eyearesee-client"
+  },
+  "homepage": "https://github.com/evanlucas/eyearesee-client",
+  "bugs": {
+    "url": "https://github.com/evanlucas/eyearesee-client/issues"
+  }
+}

@@ -18,7 +18,7 @@ $ npm install eyearesee-client
 
 ## Documentation
 
-Can be found in the [docs](docs/index.md) directory
+Can be found in the [doc](doc/index.md) directory
 
 ## Test
 

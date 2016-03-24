@@ -7,7 +7,9 @@ test('Settings', (t) => {
   const defs = new Map([
     ['a', 'b']
   ])
-  const s = new Settings(defs)
+
+  const o = {}
+  const s = new Settings(defs, o)
   t.type(s, Settings)
   t.type(s._map, Map)
   t.type(s._defaults, Map)
@@ -32,5 +34,9 @@ test('Settings', (t) => {
   })
 
   t.equal(s.get('a'), 'c', 'get works after load')
+  t.equal(s.getConnection(), o, 'getConnection() works')
+
+  const b = new Settings()
+  t.type(b._defaults, Map)
   t.end()
 })

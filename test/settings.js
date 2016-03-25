@@ -22,6 +22,14 @@ test('Settings', (t) => {
 
   s.set('b', 'c')
 
+  s.removeAllListeners('settingChanged')
+
+  s.on('settingChanged', (k, orig, val) => {
+    t.fail('should not have fired')
+  })
+
+  s.set('b', 'c')
+
   t.equal(s.get('b'), 'c', 'get works when hitting the _map')
   t.equal(s.get('a'), 'b', 'get works when using defaults')
 

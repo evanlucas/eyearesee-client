@@ -32,7 +32,8 @@ Sets the _val_ for the given _key_.
 * `key` Same thing that a [`<Map>`][] accepts
 * `val` Same thing that a [`<Map>`][] accepts
 
-Will emit the `'settingChanged'` event.
+Will emit the `'settingChanged'` event if _val_ is not strictly equal to the
+original value for _key_.
 
 
 ##### toJSON()

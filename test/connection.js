@@ -202,6 +202,20 @@ test('Connection', (t) => {
   , prefix: 'rajaniemi.freenode.net'
   })
 
+  conn.once('log', (msg) => {
+    t.equal(msg.type, 'info', 'type')
+    t.equal(msg.from, '', 'from')
+    t.equal(msg.message, 'unaffiliated/evanlucas is your host', 'msg')
+  })
+
+  logCount++
+  conn.socket.emit('396', {
+    command: '396'
+  , params: ['evanlucas', 'unaffiliated/evanlucas']
+  , trailing: 'is your host'
+  , prefix: 'rajaniemi.freenode.net'
+  })
+
   conn.once('whois', (msg) => {
     t.deepEqual(msg, {
       nickname: 'NickServ'

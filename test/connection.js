@@ -559,6 +559,69 @@ test('Connection', (t) => {
     t.equal(u.nickname, 'eva_', 'nick')
     t.equal(u.mode, '@', 'mode')
     t.equal(u.username, '~evan')
+
+    const origSend = conn.send
+    conn.send = function(target, m) {
+      conn.send = origSend
+      t.equal(target, chan.name)
+      t.equal(m, 'This is a test')
+    }
+
+    chan.send('This is a test')
+
+    conn.send = function(target, m) {
+      conn.send = origSend
+      t.equal(target, chan.name)
+      t.equal(m, '\u0001ACTION This is a test\u0001')
+    }
+
+    chan.action('This is a test')
+
+    chan.addUser({
+      nickname: 'biscuiteater'
+    , mode: '+'
+    })
+
+    t.equal(chan.users.size, 3, 'users.size')
+
+    // These should be last
+    conn.once('channelRemoved', (m) => {
+      t.pass('got channelRemoved event')
+      t.equal(m, chan, 'the channel is correct')
+    })
+
+    conn.write = function(chunk) {
+      conn.write = connWrite
+      const m = 'eyearesee https://github.com/evanlucas/eyearesee'
+      t.equal(chunk, `PART #biscuits :${m}`)
+    }
+
+    chan.partAndDestroy()
+
+    conn.removeChannel('#biscuits')
+
+    conn.once('queryRemoved', (m) => {
+      t.pass('got queryRemoved event')
+      t.equal(m, query, 'the query is correct')
+    })
+
+    conn.removeQuery('anotherUser2')
+    conn.removeQuery('anotherUser')
+
+    t.throws(() => {
+      conn.log({})
+    }, /message type is required/)
+
+    conn.removeAllListeners('connect')
+
+    const orig = conn.socket.write
+    conn.socket.write = function(c) {
+      conn.socket.write = orig
+      t.equal(c, 'STRING', 'conn.write calls conn.socket.write')
+      t.end()
+    }
+
+    conn.write('STRING')
   })
 
   conn.socket.emit('RPL_WHOREPLY', {
@@ -591,69 +654,12 @@ test('Connection', (t) => {
   , trailing: '0 evan'
   })
 
+  conn.socket.emit('RPL_ENDOFWHO', {
+    prefix: 'wofle.freenode.net'
+  , command: 'RPL_ENDOFWHO'
+  , params: ['eva_', '#biscuits']
+  , trailing: 'End of /WHO list.'
+  })
 
   // Channel stuff
-
-  const origSend = conn.send
-  conn.send = function(target, m) {
-    conn.send = origSend
-    t.equal(target, chan.name)
-    t.equal(m, 'This is a test')
-  }
-
-  chan.send('This is a test')
-
-  conn.send = function(target, m) {
-    conn.send = origSend
-    t.equal(target, chan.name)
-    t.equal(m, '\u0001ACTION This is a test\u0001')
-  }
-
-  chan.action('This is a test')
-
-  chan.addUser({
-    nickname: 'biscuiteater'
-  , mode: '+'
-  })
-
-  t.equal(chan.users.size, 3, 'users.size')
-
-  // These should be last
-  conn.once('channelRemoved', (m) => {
-    t.pass('got channelRemoved event')
-    t.equal(m, chan, 'the channel is correct')
-  })
-
-  conn.write = function(chunk) {
-    conn.write = connWrite
-    const m = 'eyearesee https://github.com/evanlucas/eyearesee'
-    t.equal(chunk, `PART #biscuits :${m}`)
-  }
-
-  chan.partAndDestroy()
-
-  conn.removeChannel('#biscuits')
-
-  conn.once('queryRemoved', (m) => {
-    t.pass('got queryRemoved event')
-    t.equal(m, query, 'the query is correct')
-  })
-
-  conn.removeQuery('anotherUser2')
-  conn.removeQuery('anotherUser')
-
-  t.throws(() => {
-    conn.log({})
-  }, /message type is required/)
-
-  conn.removeAllListeners('connect')
-
-  const orig = conn.socket.write
-  conn.socket.write = function(c) {
-    conn.socket.write = orig
-    t.equal(c, 'STRING', 'conn.write calls conn.socket.write')
-    t.end()
-  }
-
-  conn.write('STRING')
 })

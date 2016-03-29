@@ -446,6 +446,13 @@ test('Connection', (t) => {
   , trailing: 'evan anotherUser'
   })
 
+  conn.socket.emit('RPL_ENDOFNAMES', {
+    prefix: 'rajaniemi.freenode.net'
+  , command: 'RPL_ENDOFNAMES'
+  , params: ['evan', '=', '#biscuits']
+  , trailing: 'evan anotherUser'
+  })
+
   t.equal(chan.users.size, 2, 'chan.users.size')
 
   conn.write = function(chunk) {

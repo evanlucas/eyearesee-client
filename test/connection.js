@@ -618,6 +618,8 @@ test('Connection', (t) => {
     conn.socket.write = function(c) {
       conn.socket.write = orig
       t.equal(c, 'STRING', 'conn.write calls conn.socket.write')
+      conn.connected = true
+      conn.disconnect()
       t.end()
     }
 
@@ -660,6 +662,11 @@ test('Connection', (t) => {
   , params: ['eva_', '#biscuits']
   , trailing: 'End of /WHO list.'
   })
+
+  conn.socket.close = function() {
+    t.pass('called close')
+    conn.socket.emit('close')
+  }
 
   // Channel stuff
 })

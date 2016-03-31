@@ -17,7 +17,7 @@ test('setup', (t) => {
 })
 
 test('Socket', (t) => {
-  t.plan(18)
+  t.plan(19)
   const s1 = new Socket({
     secure: true
   })
@@ -77,7 +77,9 @@ test('Socket', (t) => {
         conn.write(m)
       } else if (count === 5) {
         t.pass('got 5th')
-        conn.destroy()
+        s.close(() => {
+          t.pass('got close event')
+        })
       }
     })
   })

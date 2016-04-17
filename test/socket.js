@@ -17,7 +17,7 @@ test('setup', (t) => {
 })
 
 test('Socket', (t) => {
-  t.plan(19)
+  t.plan(21)
   const s1 = new Socket({
     secure: true
   })
@@ -44,6 +44,8 @@ test('Socket', (t) => {
   , username: 'evan'
   , realname: 'Evan Lucas'
   , altNick: 'evao'
+  , timeout: 250
+  , pingTimeout: 750
   })
 
   const m = ':wolfe.freenode.net NOTICE * :*** Looking up your hostname...\r\n'
@@ -68,6 +70,15 @@ test('Socket', (t) => {
       }
     })
 
+    s.once('timeout', (msg) => {
+      t.pass('got timeout event')
+    })
+
+    s.once('hostname', (h) => {
+      t.pass('got hostname event')
+      t.equal(h, 'chat.freenode.net', 'hostname')
+    })
+
     conn.pipe(Split()).on('data', (chunk) => {
       t.equal(chunk.toString(), ar[count++], `chunk ${count}`)
       if (count === 3) {
@@ -77,15 +88,15 @@ test('Socket', (t) => {
         conn.write(m)
       } else if (count === 5) {
         t.pass('got 5th')
-        s.close(() => {
-          t.pass('got close event')
-        })
       }
     })
   })
 
   s.once('connect', () => {
     t.pass('got connect event')
+    s.emit('RPL_MOTDSTART', {
+      prefix: 'chat.freenode.net'
+    })
   })
 
   s.connect()
